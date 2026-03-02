@@ -42,6 +42,27 @@ export default function Inicio() {
           className="h-[500px] w-full rounded-lg border"
         ></iframe>
       </div> */}
+     <div className="mt-10 flex gap-4 w-full max-w-md">
+  
+  {/* 📄 Ver PDF */}
+  <a
+    href="https://drive.google.com/file/d/1raumDdwJ_PtT0sUhmZ4mV8gjH3T3PGm_/preview"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="flex-1 text-center bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold"
+  >
+    📄 Ver PDF
+  </a>
+
+  {/* ⬇️ Descargar PDF */}
+  <a
+    href="https://drive.google.com/uc?export=download&id=1raumDdwJ_PtT0sUhmZ4mV8gjH3T3PGm_"
+    className="flex-1 text-center bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-bold"
+  >
+    ⬇️ Descargar PDF
+  </a>
+
+</div>
     </div>
   );
 }

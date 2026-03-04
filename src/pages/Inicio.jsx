@@ -46,7 +46,7 @@ export default function Inicio() {
   
   {/* 📄 Ver PDF */}
   <a
-    href="https://drive.google.com/file/d/1raumDdwJ_PtT0sUhmZ4mV8gjH3T3PGm_/preview"
+    href="https://drive.google.com/file/d/1vy7p7ZAsCJJo7sTmNFwsb2L4SiVAT3kA/preview"
     target="_blank"
     rel="noopener noreferrer"
     className="flex-1 text-center bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-bold"
@@ -56,7 +56,7 @@ export default function Inicio() {
 
   {/* ⬇️ Descargar PDF */}
   <a
-    href="https://drive.google.com/uc?export=download&id=1raumDdwJ_PtT0sUhmZ4mV8gjH3T3PGm_"
+    href="https://drive.google.com/uc?export=download&id=1vy7p7ZAsCJJo7sTmNFwsb2L4SiVAT3kA"
     className="flex-1 text-center bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-bold"
   >
     ⬇️ Descargar PDF

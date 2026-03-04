@@ -8,5 +8,5 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: 'https://alexx73.github.io/mi-aula/',
+  base: 'https://alexx73.github.io/aula-1ero/',
 })

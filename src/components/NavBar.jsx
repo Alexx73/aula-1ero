@@ -36,7 +36,7 @@ export default function NavBar() {
             alt="Logo"
           />
           <span className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white ml-2">
-            Mi Aula de Inglés
+            Aula de Inglés de primer año
           </span>
         </Navbar.Brand>
 
@@ -55,35 +55,44 @@ export default function NavBar() {
             active={isActive("/alphabet")}
             onClick={handleLinkClick}
           >
-            Alphabet
+            The Alphabet
           </Navbar.Link>
 
           <Navbar.Link
+            as={Link}
+            to="/number"
+            active={isActive("/number")}
+            onClick={handleLinkClick}
+          >
+            Numbers
+          </Navbar.Link>
+
+          {/* <Navbar.Link
             as={Link}
             to="/questions"
             active={isActive("/questions")}
             onClick={handleLinkClick}
           >
             Personal Info
-          </Navbar.Link>
+          </Navbar.Link> */}
 
-          <Navbar.Link
+          {/* <Navbar.Link
             as={Link}
             to="/jobs"
             active={isActive("/jobs")}
             onClick={handleLinkClick}
           >
             Jobs
-          </Navbar.Link>
+          </Navbar.Link> */}
 
-          <Navbar.Link
+          {/* <Navbar.Link
             as={Link}
             to="/family"
             active={isActive("/family")}
             onClick={handleLinkClick}
           >
            Family
-          </Navbar.Link>
+          </Navbar.Link> */}
         </Navbar.Collapse>
       </div>
     </Navbar>

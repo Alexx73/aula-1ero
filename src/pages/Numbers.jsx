@@ -30,7 +30,7 @@ const Numbers = () => {
    🎮 CONFIGURACIÓN DEL JUEGO
    Podés cambiar el valor inicial (10)
 ========================================= */
-const [totalRounds, setTotalRounds] = useState(5);
+  const totalRounds = 5;
 
   // Ajusta este valor para cambiar el tono de la voz.
   // Más alto = voz más aguda. Más bajo = voz más grave.
@@ -60,19 +60,35 @@ const [totalRounds, setTotalRounds] = useState(5);
   // Ajusta este valor para subir o bajar el espacio entre las filas.
   // Más grande = más separación vertical. Más chico = más filas pegadas.
   // En móvil, probá valores entre 0.25rem y 1rem.
-  const rowGap = '1rem';
+  const rowGap = '0.25rem';
 
   // Ajusta este valor para cambiar el tamaño de los números.
   // Más grande = números más grandes. Más chico = números más chicos.
-  const numberFontSize = '2rem';
+  const numberFontSize = '1.25rem';
 
   // Ajusta este valor para cambiar el tamaño de las palabras debajo del número.
   // Más grande = palabras más grandes. Más chico = palabras más chicas.
-  const numberWordFontSize = '0.9rem';
+  const numberWordFontSize = '0.48rem';
 
   // Ajusta este valor para separar la zona de botones de la grilla de números.
   // Más grande = más aire entre ambas secciones.
-  const topSectionGap = '0.8rem';
+  const topSectionGap = '0.25rem';
+
+  // Ajusta este valor para subir o bajar la posición de la zona de botones.
+  // Más grande = más abajo. Más chico = más arriba.
+  const buttonsSectionBottom = '0.75rem';
+
+  // Ajusta este valor para cambiar el ancho de los botones.
+  // Más grande = botones más anchos. Más chico = botones más angostos.
+  const buttonWidth = '3.5rem';
+
+  // Ajusta este valor para cambiar la altura de los botones.
+  // Más grande = botones más altos. Más chico = botones más bajos.
+  const buttonHeight = '2.5rem';
+
+  // Ajusta este valor para cambiar el tamaño de letra de los botones.
+  // Más grande = texto más grande. Más chico = texto más chico.
+  const buttonFontSize = '0.9rem';
 
   /* =========================================
      👋 INTRO BART
@@ -194,7 +210,7 @@ const [totalRounds, setTotalRounds] = useState(5);
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col px-2 pt-1 pb-2 sm:p-5 bg-gray-100 font-sans dark:bg-gray-800">
+    <div className="h-[100dvh] w-full flex flex-col px-2 pt-1 pb-0 sm:p-5 bg-gray-100 font-sans dark:bg-gray-800 overflow-hidden">
 
       {showBart && (
         <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-95 z-50">
@@ -202,35 +218,15 @@ const [totalRounds, setTotalRounds] = useState(5);
         </div>
       )}
 
-      {/* BOTONES + INFO */}
-      <div className="flex items-center justify-between gap-2 mb-1 sm:mb-4 overflow-hidden">
-        <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-          <button
-            onClick={() => setGameMode(false)}
-            className={`px-2 py-2 sm:px-4 rounded-lg font-bold text-[10px] sm:text-base whitespace-nowrap ${!gameMode ? "bg-blue-600 text-white" : "bg-gray-300"}`}
-          >
-            📚 Learn Mode
-          </button>
-
-          <button
-            onClick={gameMode ? endGame : startGame}
-            className={`px-2 py-2 sm:px-4 rounded-lg font-bold text-[10px] sm:text-base whitespace-nowrap ${gameMode ? "bg-red-600 text-white" : "bg-green-600 text-white"}`}
-          >
-            {gameMode ? "🛑 End Game" : "🎮 Start Game"}
-          </button>
-        </div>
-
-        <div className="flex-1 text-center text-base sm:text-xl font-black leading-none whitespace-nowrap find-rainbow">
-          {gameMode && !gameOver ? message : ""}
-        </div>
-
-        <div className="shrink-0 text-right text-[10px] sm:text-sm font-bold leading-none text-white/90 whitespace-nowrap">
-          {gameMode && !gameOver ? (
-            <span>⭐ Score: {score} · 🔢 Round: {round + 1}/{totalRounds}</span>
-          ) : (
-            <span className="opacity-0 select-none">⭐ Score: 0 Round: 0/0</span>
-          )}
-        </div>
+      <div className="mb-1 min-h-[1.75rem] text-center text-[11px] font-black leading-none whitespace-nowrap">
+        {gameMode && !gameOver ? (
+          <>
+            <span className="find-rainbow">{message}</span>
+            <span className="ml-2 text-white/90">
+              ⭐ Score: {score} · 🔢 Round: {round + 1}/{totalRounds}
+            </span>
+          </>
+        ) : null}
       </div>
 
       {/* PANTALLA FINAL */}
@@ -260,14 +256,14 @@ const [totalRounds, setTotalRounds] = useState(5);
 
       {/* GRID */}
       <div
-        className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 gap-x-1 sm:gap-2 flex-grow content-start"
+        className="grid grid-cols-4 sm:grid-cols-3 md:grid-cols-4 gap-x-1 sm:gap-2 flex-none content-start"
         style={{ rowGap, marginTop: topSectionGap }}
       >
         {numbers.map((number, index) => (
           <div
             key={number}
             onClick={() => handleClick(number)}
-            className={`flex flex-col justify-center items-center text-white rounded-xl cursor-pointer transition-transform duration-200 select-none h-20 sm:h-28 hover:scale-105 active:scale-95 ${colors[index % colors.length]}`}
+            className={`flex flex-col justify-center items-center text-white rounded-xl cursor-pointer transition-transform duration-200 select-none h-[3.7rem] sm:h-28 hover:scale-105 active:scale-95 ${colors[index % colors.length]}`}
           >
             <span
               className="font-bold leading-none"
@@ -290,6 +286,32 @@ const [totalRounds, setTotalRounds] = useState(5);
           </div>
         ))}
       </div>
+
+      {/* BOTONES */}
+      <div
+        className="fixed left-0 right-0 bottom-0 z-40 flex items-center justify-center gap-2 overflow-hidden px-2 pb-1 pt-1 bg-gray-100 dark:bg-gray-800"
+        style={{ marginBottom: buttonsSectionBottom }}
+      >
+        <div className="flex items-center justify-center gap-2 shrink-0">
+          <button
+            onClick={() => setGameMode(false)}
+            className={`rounded-lg font-bold whitespace-nowrap ${!gameMode ? "bg-blue-600 text-white" : "bg-gray-300"}`}
+            style={{ width: buttonWidth, height: buttonHeight, fontSize: buttonFontSize }}
+          >
+            📚
+          </button>
+
+          <button
+            onClick={gameMode ? endGame : startGame}
+            className={`rounded-lg font-bold whitespace-nowrap ${gameMode ? "bg-red-600 text-white" : "bg-green-600 text-white"}`}
+            style={{ width: buttonWidth, height: buttonHeight, fontSize: buttonFontSize }}
+          >
+            {gameMode ? "🛑" : "🎮"}
+          </button>
+        </div>
+      </div>
+
+      <div className="h-14" aria-hidden="true" />
 
     </div>
   );

@@ -69,6 +69,7 @@ export default function NamesWheel() {
   const [result, setResult] = useState(null);
   const [isResultOpen, setIsResultOpen] = useState(false);
   const [spinRequest, setSpinRequest] = useState(0);
+  const [selectedItem, setSelectedItem] = useState(null);
   const shake = useShake({
     armed: isResultOpen,
     onShake: () => {
@@ -135,6 +136,7 @@ export default function NamesWheel() {
   }, [isResultOpen, stopSpeech]);
 
   const handleWinner = (winner) => {
+    setSelectedItem(null);
     setAvailableNames((currentNames) => currentNames.filter((name) => name !== winner));
     setUsedNames((current) => [...current, winner]);
     setResult(winner);
@@ -143,6 +145,7 @@ export default function NamesWheel() {
   };
 
   const updateNames = (text) => {
+    setSelectedItem(null);
     stopSpeech();
     const parsedNames = parseNames(text);
     setNameText(text);
@@ -155,6 +158,7 @@ export default function NamesWheel() {
   };
 
   const resetNames = () => {
+    setSelectedItem(null);
     stopSpeech();
     setAvailableNames(names);
     setUsedNames([]);
@@ -180,6 +184,8 @@ export default function NamesWheel() {
           items={availableNames}
           onWinner={handleWinner}
           spinRequest={spinRequest}
+          selectedItem={selectedItem}
+          onSelectItem={setSelectedItem}
           ariaLabel="Rueda de nombres de alumnos"
         />
 

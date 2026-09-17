@@ -29,6 +29,8 @@ export default function WheelSpinner({
   onWinner,
   disabled = false,
   spinRequest = 0,
+  selectedItem = null,
+  onSelectItem,
   ariaLabel = 'Rueda de selección',
 }) {
   const [rotation, setRotation] = useState(0);
@@ -57,6 +59,7 @@ export default function WheelSpinner({
         index,
         path: getSegmentPath(startAngle, endAngle),
         labelPoint,
+        markerPoint: pointOnCircle(labelRadius - 16, middleAngle),
         middleAngle,
         color: COLORS[index % COLORS.length],
         textColor: isLight ? '#10201d' : '#ffffff',
@@ -133,7 +136,8 @@ export default function WheelSpinner({
     if (disabled || spinningRef.current || items.length === 0) return;
     spinningRef.current = true;
 
-    const winnerIndex = getRandomIndex(items.length);
+    const selectedIndex = items.indexOf(selectedItem);
+    const winnerIndex = selectedIndex >= 0 ? selectedIndex : getRandomIndex(items.length);
     const step = 360 / items.length;
     const winnerCenterAngle = POINTER_ANGLE + (winnerIndex + 0.5) * step;
     const correction = (POINTER_ANGLE - (winnerCenterAngle + rotation) + 360) % 360;
@@ -159,19 +163,39 @@ export default function WheelSpinner({
     if (increased) spinRef.current();
   }, [spinRequest]);
 
+  const selectItem = (item) => {
+    if (disabled || spinningRef.current || !onSelectItem) return;
+    onSelectItem(item === selectedItem ? null : item);
+  };
+
   return (
     <div className="number-wheel-stage" aria-label={ariaLabel}>
       <div className="number-wheel-pointer" aria-hidden="true" />
       <svg
         className={`number-wheel-svg ${isSpinning ? 'is-spinning' : ''}`}
         viewBox="0 0 500 500"
-        role="img"
+        role={onSelectItem ? 'group' : 'img'}
         aria-label={ariaLabel}
         style={{ transform: `rotate(${rotation}deg)` }}
       >
         <circle cx={CENTER} cy={CENTER} r={RADIUS + 2} fill="#f8fafc" />
         {segments.map((segment) => (
-          <g key={`${segment.index}-${segment.item}`}>
+          <g
+            key={`${segment.index}-${segment.item}`}
+            role={onSelectItem ? 'button' : undefined}
+            tabIndex={onSelectItem && !disabled && !isSpinning ? 0 : undefined}
+            aria-label={onSelectItem ? `Elegir a ${segment.item} para el próximo giro` : undefined}
+            aria-pressed={onSelectItem ? selectedItem === segment.item : undefined}
+            aria-disabled={onSelectItem ? disabled || isSpinning : undefined}
+            onClick={onSelectItem ? () => selectItem(segment.item) : undefined}
+            onKeyDown={onSelectItem ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectItem(segment.item);
+              }
+            } : undefined}
+            style={{ cursor: onSelectItem && !disabled && !isSpinning ? 'pointer' : undefined }}
+          >
             <path d={segment.path} fill={segment.color} stroke="#ffffff" strokeWidth={items.length <= 20 ? 2 : 0.6} />
             <text
               x={segment.labelPoint.x}
@@ -185,6 +209,9 @@ export default function WheelSpinner({
             >
               {segment.item}
             </text>
+            {selectedItem === segment.item && !isSpinning && (
+              <circle cx={segment.markerPoint.x} cy={segment.markerPoint.y} r="2.5" fill={segment.textColor} aria-hidden="true" />
+            )}
           </g>
         ))}
         <circle cx={CENTER} cy={CENTER} r={INNER_RADIUS + 5} fill="#ffffff" opacity="0.9" />

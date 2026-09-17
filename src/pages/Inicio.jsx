@@ -74,6 +74,13 @@ const quarterData = [
         badge: 'Chat',
         accentClass: 'bg-rose-500',
       },
+      {
+        to: '/names-wheel',
+        title: 'Wheel of Names',
+        subtitle: 'Elegir un alumno para resolver un ejercicio.',
+        badge: 'Class game',
+        accentClass: 'bg-orange-500',
+      },
     ],
   },
   {

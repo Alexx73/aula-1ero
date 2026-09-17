@@ -1,95 +1,104 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export default function useSpeech (options = {}) {
-  const [playingItems, setPlayingItems] = useState(new Set());
-  const [voices, setVoices] = useState([]);
-  const synth = window.speechSynthesis;
-  const {
-    pitch = 1.35,
-    rate = 1.08,
-    letterRate = 0.95
-  } = options;
+const restoreLetters = () => {
+  document.querySelectorAll('.letter').forEach(letter => {
+    letter.style.opacity = '1';
+    letter.style.cursor = 'pointer';
+  });
+};
 
-  // Load voices
+const normalizeLanguage = language => language.toLowerCase().replaceAll('_', '-');
+
+const selectVoice = (voices, language) => {
+  const locale = normalizeLanguage(language);
+  const baseLanguage = locale.split('-')[0];
+  const exactVoices = voices.filter(voice => normalizeLanguage(voice.lang) === locale);
+  const candidates = exactVoices.length ? exactVoices : voices.filter(
+    voice => normalizeLanguage(voice.lang).split('-')[0] === baseLanguage,
+  );
+
+  // Preserve the preference for youthful English voices within the matching locale.
+  if (baseLanguage === 'en') {
+    const preferred = candidates.find(voice =>
+      /child|kid|boy|junior|young|female/i.test(voice.name),
+    );
+    if (preferred) return preferred;
+  }
+  return candidates[0];
+};
+
+export default function useSpeech(options = {}) {
+  const activeUtterance = useRef(null);
+  const synth = typeof window === 'undefined' ? undefined : window.speechSynthesis;
+  const { language = 'en-US', pitch = 1.35, rate = 1.08, letterRate = 0.95, requireMatchingVoice = false } = options;
+  const [voices, setVoices] = useState(() => synth?.getVoices() ?? []);
+
   useEffect(() => {
-    const loadVoices = () => {
-      const availableVoices = synth.getVoices();
-      setVoices(availableVoices);
-      console.log('Available voices:', availableVoices.map(v => `${v.name} (${v.lang})`));
-    };
+    if (!synth) return undefined;
+    const loadVoices = () => setVoices(synth.getVoices());
+    synth.addEventListener('voiceschanged', loadVoices);
     loadVoices();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = loadVoices;
-    }
-  }, []);
+    return () => synth.removeEventListener('voiceschanged', loadVoices);
+  }, [synth]);
 
-  // Function to play sound (letter or word)
+  const selectedVoice = selectVoice(voices, language);
+
+  const stopSpeech = useCallback(() => {
+    // Ignore delayed events from an utterance that has already been cancelled.
+    activeUtterance.current = null;
+    synth?.cancel();
+    restoreLetters();
+  }, [synth]);
+
+  useEffect(() => () => stopSpeech(), [stopSpeech, language]);
+
   const playSound = (item, isLetter = false, force = false) => {
-    if (force) {
-      synth.cancel();
-      setPlayingItems(new Set());
-    } else if (playingItems.size > 0) {
-      console.log('Playback in progress, ignoring request');
-      return;
-    }
+    if (!synth || typeof SpeechSynthesisUtterance === 'undefined') return;
+    if (force) stopSpeech();
+    else if (activeUtterance.current) return;
 
-    const itemKey = isLetter ? item.toLowerCase() : item;
-    console.log('Playing:', itemKey);
-    setPlayingItems(new Set(playingItems.add(itemKey)));
+    // A language hint alone can fall back to an English system voice.
+    const voice = selectVoice(synth.getVoices(), language);
+    if (requireMatchingVoice && !voice) return;
 
-    // Handle letter-specific pronunciation
     let textToSpeak = item;
-    if (isLetter) {
+    if (isLetter && normalizeLanguage(language).split('-')[0] === 'en') {
       if (item.toLowerCase() === 'z') textToSpeak = 'zi';
       else if (item.toLowerCase() === 'y') textToSpeak = 'why';
     }
 
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.lang = 'en-US';
+    utterance.lang = voice?.lang ?? language;
     utterance.volume = 1;
     utterance.rate = isLetter ? letterRate : rate;
     utterance.pitch = pitch;
 
-    // Prefer a lighter, more youthful English voice if the device has one.
-    const preferredVoice = voices.find(voice => {
-      const name = voice.name.toLowerCase();
-      return voice.lang.includes('en') && (
-        name.includes('child') ||
-        name.includes('kid') ||
-        name.includes('boy') ||
-        name.includes('junior') ||
-        name.includes('young') ||
-        name.includes('female')
-      );
-    });
-    if (preferredVoice) utterance.voice = preferredVoice;
+    // Read the current list each time: browsers may load voices asynchronously.
+    if (voice) utterance.voice = voice;
 
-    // Handle playback end
-    utterance.onend = () => {
-      setPlayingItems(new Set([...playingItems].filter(i => i !== itemKey)));
-      // Restore visual feedback for all items
-      document.querySelectorAll('.letter').forEach(l => {
-        l.style.opacity = '1';
-        l.style.cursor = 'pointer';
-      });
+    const finish = () => {
+      if (activeUtterance.current !== utterance) return;
+      activeUtterance.current = null;
+      restoreLetters();
     };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    activeUtterance.current = utterance;
 
     try {
-      // Play the utterance
-      synth.speak(utterance);
-      // Visual feedback: dim all letters except the clicked one
-      document.querySelectorAll('.letter').forEach(l => {
-        l.style.opacity = '0.6';
-        l.style.cursor = 'default';
+      document.querySelectorAll('.letter').forEach(letter => {
+        letter.style.opacity = '0.6';
+        letter.style.cursor = 'default';
       });
-      const currentItem = document.querySelector(`[data-item="${item}"]`);
-      if (currentItem) currentItem.style.opacity = '1';
+      document.querySelectorAll('[data-item]').forEach(element => {
+        if (element.dataset.item === item) element.style.opacity = '1';
+      });
+      synth.speak(utterance);
     } catch (error) {
       console.error('Error playing sound:', error);
-      setPlayingItems(new Set([...playingItems].filter(i => i !== itemKey)));
+      finish();
     }
   };
 
-  return { playSound };
-};
-
+  return { playSound, stopSpeech, selectedVoice, speechSupported: Boolean(synth) };
+}

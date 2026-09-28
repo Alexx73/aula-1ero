@@ -6,6 +6,7 @@ const RADIUS = 238;
 const INNER_RADIUS = 44;
 const POINTER_ANGLE = -90;
 const SPIN_DURATION = 4800;
+const SPIN_EASING = [0.12, 0.74, 0.18, 1];
 
 const toRadians = (angle) => (angle * Math.PI) / 180;
 
@@ -24,6 +25,35 @@ const getSegmentPath = (startAngle, endAngle) => {
 
 const getRandomIndex = (length) => Math.floor(Math.random() * length);
 
+const createCubicBezier = ([x1, y1, x2, y2]) => {
+  const sampleCurveX = (t) => (((1 - 3 * x2 + 3 * x1) * t + (3 * x2 - 6 * x1)) * t + 3 * x1) * t;
+  const sampleCurveY = (t) => (((1 - 3 * y2 + 3 * y1) * t + (3 * y2 - 6 * y1)) * t + 3 * y1) * t;
+  const sampleDerivativeX = (t) => (3 * (1 - 3 * x2 + 3 * x1) * t + 2 * (3 * x2 - 6 * x1)) * t + 3 * x1;
+
+  return (progress) => {
+    let t = progress;
+    for (let iteration = 0; iteration < 8; iteration += 1) {
+      const derivative = sampleDerivativeX(t);
+      if (Math.abs(derivative) < 1e-6) break;
+      t -= (sampleCurveX(t) - progress) / derivative;
+    }
+
+    let lower = 0;
+    let upper = 1;
+    t = Math.min(1, Math.max(0, t));
+    for (let iteration = 0; iteration < 8; iteration += 1) {
+      const x = sampleCurveX(t);
+      if (Math.abs(x - progress) < 1e-5) break;
+      if (x < progress) lower = t;
+      else upper = t;
+      t = (lower + upper) / 2;
+    }
+    return sampleCurveY(t);
+  };
+};
+
+const easeSpin = createCubicBezier(SPIN_EASING);
+
 export default function WheelSpinner({
   items,
   onWinner,
@@ -35,12 +65,12 @@ export default function WheelSpinner({
 }) {
   const [rotation, setRotation] = useState(0);
   const [isSpinning, setIsSpinning] = useState(false);
-  const timerRef = useRef(null);
+  const rotationRef = useRef(0);
+  const animationFrameRef = useRef(null);
   const spinningRef = useRef(false);
   const spinRef = useRef(null);
   const lastRequest = useRef(spinRequest);
   const audioContextRef = useRef(null);
-  const spinSoundTimerRef = useRef(null);
 
   const segments = useMemo(() => {
     const step = 360 / Math.max(items.length, 1);
@@ -69,8 +99,7 @@ export default function WheelSpinner({
   }, [items]);
 
   useEffect(() => () => {
-    window.clearTimeout(timerRef.current);
-    window.clearTimeout(spinSoundTimerRef.current);
+    window.cancelAnimationFrame(animationFrameRef.current);
   }, []);
 
   const playVictorySound = () => {
@@ -96,40 +125,25 @@ export default function WheelSpinner({
     });
   };
 
-  const startSpinSound = () => {
+  const playSpinTick = () => {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
 
     audioContextRef.current ??= new AudioContext();
     const audioContext = audioContextRef.current;
-    const playTick = () => {
-      const oscillator = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      const now = audioContext.currentTime;
-      oscillator.type = 'triangle';
-      oscillator.frequency.setValueAtTime(145, now);
-      oscillator.frequency.exponentialRampToValueAtTime(85, now + 0.055);
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.2, now + 0.006);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
-      oscillator.connect(gain);
-      gain.connect(audioContext.destination);
-      oscillator.start(now);
-      oscillator.stop(now + 0.07);
-    };
-
-    const startedAt = performance.now();
-    const scheduleTick = () => {
-      const elapsed = performance.now() - startedAt;
-      if (elapsed >= SPIN_DURATION) return;
-      playTick();
-      const progress = Math.min(elapsed / SPIN_DURATION, 1);
-      spinSoundTimerRef.current = window.setTimeout(scheduleTick, 75 + (progress ** 2) * 375);
-    };
-
-    audioContext.resume();
-    window.clearTimeout(spinSoundTimerRef.current);
-    scheduleTick();
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    const now = audioContext.currentTime;
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(145, now);
+    oscillator.frequency.exponentialRampToValueAtTime(85, now + 0.055);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.2, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(now);
+    oscillator.stop(now + 0.07);
   };
 
   const spin = () => {
@@ -140,19 +154,53 @@ export default function WheelSpinner({
     const winnerIndex = selectedIndex >= 0 ? selectedIndex : getRandomIndex(items.length);
     const step = 360 / items.length;
     const winnerCenterAngle = POINTER_ANGLE + (winnerIndex + 0.5) * step;
-    const correction = (POINTER_ANGLE - (winnerCenterAngle + rotation) + 360) % 360;
+    const startRotation = rotationRef.current;
+    const correction = (POINTER_ANGLE - (winnerCenterAngle + startRotation) + 360) % 360;
+    const totalRotation = 360 * 6 + correction;
+    const targetRotation = startRotation + totalRotation;
+    const tickAngle = Math.max(24, step * 2);
+    const itemsSnapshot = items.slice();
+    const context = window.AudioContext || window.webkitAudioContext;
 
-    startSpinSound();
+    if (context) {
+      audioContextRef.current ??= new context();
+      audioContextRef.current.resume();
+      playSpinTick();
+    }
     setIsSpinning(true);
-    setRotation(rotation + 360 * 6 + correction);
-    window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => {
-      window.clearTimeout(spinSoundTimerRef.current);
+    let startedAt = null;
+    let nextTickDistance = tickAngle;
+
+    const animate = (timestamp) => {
+      if (startedAt === null) startedAt = timestamp;
+      const elapsed = timestamp - startedAt;
+      const progress = Math.min(elapsed / SPIN_DURATION, 1);
+      const distance = totalRotation * easeSpin(progress);
+      const nextRotation = startRotation + distance;
+
+      rotationRef.current = nextRotation;
+      setRotation(nextRotation);
+
+      if (distance >= nextTickDistance && progress < 1) {
+        playSpinTick();
+        nextTickDistance += tickAngle;
+      }
+
+      if (progress < 1) {
+        animationFrameRef.current = window.requestAnimationFrame(animate);
+        return;
+      }
+
+      rotationRef.current = targetRotation;
+      setRotation(targetRotation);
       spinningRef.current = false;
       setIsSpinning(false);
-      onWinner(items[winnerIndex]);
+      onWinner(itemsSnapshot[winnerIndex]);
       playVictorySound();
-    }, SPIN_DURATION);
+    };
+
+    window.cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = window.requestAnimationFrame(animate);
   };
 
   useLayoutEffect(() => { spinRef.current = spin; });

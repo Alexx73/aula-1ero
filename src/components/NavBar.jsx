@@ -1,27 +1,9 @@
 import { Navbar } from "flowbite-react";
 import { Link, useLocation } from "react-router-dom";
-import { useState, useEffect } from "react";
 
 export default function NavBar() {
   const location = useLocation();
-  const isActive = (path) => location.pathname === path;
   const isHome = location.pathname === "/";
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Cerrar el menú al cambiar de ruta
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location]);
-
-  // Manejar el clic en el botón de toggle
-  const handleToggle = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  // Cerrar el menú al hacer clic en un enlace
-  const handleLinkClick = () => {
-    setIsMenuOpen(false);
-  };
 
   return (
     <Navbar
@@ -31,21 +13,20 @@ export default function NavBar() {
     >
       <div className="flex flex-wrap justify-between items-center w-full px-4 md:px-8">
         {/* LOGO */}
-        <Navbar.Brand as={Link} to="/" onClick={handleLinkClick} className="flex flex-col items-start gap-1">
-          <div className="flex items-center">
+        <Navbar.Brand as="div" className="flex flex-col items-start gap-1">
+          <Link to="/" className="flex items-center">
             <img
               src="https://flowbite.com/docs/images/logo.svg"
               className="h-4"
               alt="Logo"
             />
-            <span className="text-md md:text-md font-semibold text-gray-900 dark:text-white ml-2">
+            <span className="text-md md:text-md ml-2 font-semibold text-gray-900 dark:text-white">
               Aula de Inglés de 1er año
             </span>
-          </div>
+          </Link>
           {!isHome && (
             <Link
               to="/"
-              onClick={handleLinkClick}
               className="ml-10 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-fuchsia-600 to-orange-500 px-3 py-1 text-sm font-bold text-white shadow-lg shadow-fuchsia-500/30 transition hover:brightness-110"
             >
               ← Volver

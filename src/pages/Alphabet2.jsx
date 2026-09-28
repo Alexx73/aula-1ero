@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Bart from '../assets/bart2.png';
+import useSpeech from '../hooks/useSpeech';
 
 
 export default function Alphabet2() {
@@ -14,27 +15,13 @@ export default function Alphabet2() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Initialize speech synthesis
+  const { selectedVoice, speechPlaybackRate, speechSupported } = useSpeech({ language: 'en-US' });
   const synth = window.speechSynthesis;
-  const [voices, setVoices] = useState([]);
-
-  const loadVoices = () => {
-    const availableVoices = synth.getVoices();
-    setVoices(availableVoices);
-    console.log('Available voices:', availableVoices.map(v => `${v.name} (${v.lang})`));
-  };
-
-  useEffect(() => {
-    loadVoices();
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = loadVoices;
-    }
-  }, []);
 
   const handleLetterClick = (letter) => {
     const letterSound = letter.toLowerCase();
 
-    if (playingLetters.size > 0) {
+    if (playingLetters.size > 0 || !speechSupported || !selectedVoice) {
       console.log('Playback in progress, ignoring click');
       return;
     }
@@ -54,9 +41,10 @@ export default function Alphabet2() {
     else if (letterSound === 'y') textToSpeak = 'why';
 
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.lang = 'en-US';
+    utterance.voice = selectedVoice;
+    utterance.lang = selectedVoice.lang;
     utterance.volume = 1;
-    utterance.rate = 0.8;
+    utterance.rate = speechPlaybackRate;
 
     utterance.onend = () => {
       setPlayingLetters(new Set([...playingLetters].filter(l => l !== letterSound)));
@@ -65,11 +53,6 @@ export default function Alphabet2() {
         l.style.cursor = 'pointer';
       });
     };
-
-    const femaleVoice = voices.find(voice => 
-      voice.lang.includes('en') && voice.name.toLowerCase().includes('female')
-    );
-    if (femaleVoice) utterance.voice = femaleVoice;
 
     try {
       synth.speak(utterance);

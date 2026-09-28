@@ -11,7 +11,7 @@ export default function QuarterTabs({ tabs, activeId, onChange }) {
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
-            className={`rounded-xl px-3 py-2 text-xs font-bold transition sm:text-sm ${
+            className={`rounded-xl px-2.5 py-2.5 text-sm font-black transition sm:px-3 sm:py-3 sm:text-base ${
               active
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-gray-700 hover:bg-white/80 dark:text-gray-200 dark:hover:bg-white/10'

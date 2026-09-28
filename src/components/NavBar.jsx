@@ -1,5 +1,6 @@
 import { Navbar } from "flowbite-react";
 import { Link, useLocation } from "react-router-dom";
+import SpeechControls from "./SpeechControls";
 
 export default function NavBar() {
   const location = useLocation();
@@ -11,7 +12,7 @@ export default function NavBar() {
       className="w-full bg-white border-b border-gray-200 shadow-sm fixed left-0 z-50"
       style={{ top: 'calc(-1 * var(--nav-vertical-shift, 0px))' }}
     >
-      <div className="flex flex-wrap justify-between items-center w-full px-4 md:px-8">
+      <div className="flex flex-wrap items-center justify-between w-full px-4 md:px-8">
         {/* LOGO */}
         <Navbar.Brand as="div" className="flex flex-col items-start gap-1">
           <Link to="/" className="flex items-center">
@@ -33,6 +34,8 @@ export default function NavBar() {
             </Link>
           )}
         </Navbar.Brand>
+
+        <SpeechControls />
 
         {/* BOTÓN DE MENÚ RESPONSIVE */}
         {/* <Navbar.Toggle onClick={handleToggle} className="focus:ring-0 focus:outline-none" /> */}

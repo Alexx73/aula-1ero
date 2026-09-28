@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 import lisaImg from "../assets/lisa1.png";
+import useSpeech from "../hooks/useSpeech";
 
 // Preguntas y personajes
 const questions = [
@@ -20,35 +21,6 @@ const characters = [
   { img: lisaImg, name: "Lisa" },
   { img: lisaImg, name: "Lisa" },
 ];
-
-// Función para pronunciar la pregunta
-function speak(text) {
-  const utter = new window.SpeechSynthesisUtterance(text);
-  utter.voice =
-    window.speechSynthesis
-      .getVoices()
-      .find((v) => v.lang === "en-US" && v.gender === "female") || null;
-  utter.lang = "en-US";
-  utter.rate = 1;
-  window.speechSynthesis.speak(utter);
-}
-
-function getFemaleVoice() {
-  const voices = window.speechSynthesis.getVoices();
-  return (
-    voices.find(
-      (v) =>
-        v.lang === "en-US" &&
-        (v.name === "Samantha" ||
-          v.name === "Google US English" ||
-          v.name === "Microsoft Zira Desktop" ||
-          v.name.toLowerCase().includes("female") ||
-          v.name.toLowerCase().includes("woman")),
-    ) ||
-    voices.find((v) => v.lang === "en-US") ||
-    voices[0]
-  );
-}
 
 // Nueva función para mostrar el mensaje final
 function FinPreguntas({ onRestart, onHome }) {
@@ -88,6 +60,10 @@ function FinPreguntas({ onRestart, onHome }) {
 }
 
 export default function PersonalInformation() {
+  const { selectedVoice, speechPlaybackRate, speechSupported } = useSpeech({
+    language: "en-US",
+    pitch: 1.35,
+  });
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [input, setInput] = useState("");
@@ -97,24 +73,14 @@ export default function PersonalInformation() {
   const [isWaiting, setIsWaiting] = useState(false); // Nuevo estado para controlar la pausa
   const [finished, setFinished] = useState(false);
 
-  // Espera a que la voz femenina esté disponible
+  // Espera a que la voz inglesa elegida esté disponible.
   useEffect(() => {
-    function checkVoice() {
-      const voices = window.speechSynthesis.getVoices();
-      if (getFemaleVoice()) {
-        setVoiceReady(true);
-      }
-    }
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.onvoiceschanged = checkVoice;
-    } else {
-      checkVoice();
-    }
-  }, []);
+    setVoiceReady(Boolean(speechSupported && selectedVoice));
+  }, [selectedVoice, speechSupported]);
 
   // Pronuncia la pregunta y resalta cada palabra
   useEffect(() => {
-    if (!started) return;
+    if (!started || !speechSupported || !selectedVoice) return;
     let cancelled = false;
 
     function speakQuestion() {
@@ -122,10 +88,10 @@ export default function PersonalInformation() {
       window.speechSynthesis.cancel(); // Cancela cualquier pronunciación previa
 
       const utter = new window.SpeechSynthesisUtterance(questions[step].text);
-      utter.voice = getFemaleVoice();
-      utter.lang = "en-US";
-      utter.pitch = 1.2;
-      utter.rate = 0.5;
+      utter.voice = selectedVoice;
+      utter.lang = selectedVoice.lang;
+      utter.pitch = 1.35;
+      utter.rate = speechPlaybackRate * 0.5;
 
       utter.onboundary = (event) => {
         if (event.name === "word") {
@@ -144,19 +110,14 @@ export default function PersonalInformation() {
       window.speechSynthesis.speak(utter);
     }
 
-    // Espera a que las voces estén listas antes de hablar
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.onvoiceschanged = speakQuestion;
-    } else {
-      speakQuestion();
-    }
+    speakQuestion();
 
     return () => {
       cancelled = true;
       window.speechSynthesis.cancel();
       setSpeakingWordIdx(-1);
     };
-  }, [step, started]);
+  }, [step, started, selectedVoice, speechPlaybackRate, speechSupported]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

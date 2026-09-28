@@ -4,6 +4,7 @@ import useSpeech from "../hooks/useSpeech.js";
 export default function Jobs() {
   const { playSound } = useSpeech();
   const [activeJob, setActiveJob] = useState(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   // Duración total (texto + animación)
   const duracion = 1500;
@@ -34,6 +35,9 @@ export default function Jobs() {
     const name = fileName.replace(/^\d+\s*-\s*/, "").trim().toLowerCase();
     return { name, img: images[path].default };
   });
+  const itemsPerPage = 8;
+  const pageCount = Math.ceil(jobs.length / itemsPerPage);
+  const visibleJobs = jobs.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
   const colors = [
     "bg-red-500",
@@ -51,16 +55,16 @@ export default function Jobs() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-800 py-5 px-4 flex flex-col items-center">
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-4">
-        {jobs.map((job, index) => {
+    <div className="relative flex h-[calc(100dvh-4rem)] flex-col items-center overflow-hidden bg-gray-50 px-4 py-5 dark:bg-gray-800">
+      <div className="grid w-full min-h-0 grid-cols-2 content-start gap-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4">
+        {visibleJobs.map((job, index) => {
           const color = colors[index % colors.length];
           const isActive = activeJob === job.name;
 
           return (
             <div
               key={job.name}
-              className={`relative flex flex-col items-center justify-center rounded-xl p-2 cursor-pointer transition-transform duration-300 ${color} ${
+              className={`relative flex w-full flex-col items-center justify-center rounded-xl p-2 cursor-pointer transition-transform duration-300 ${color} ${
                 isActive ? "animate-pop" : "hover:scale-105"
               }`}
               onClick={() => handleClick(job.name)}
@@ -69,7 +73,7 @@ export default function Jobs() {
               {/* Traducción arriba de la imagen */}
               {isActive && (
                 <div
-                  className="absolute top-0 left-0 right-0 bg-black/70 text-white text-sm font-bold py-1 text-center rounded-t-lg animate-fadeInOut"
+                  className="absolute top-0 left-0 right-0 rounded-t-lg bg-black/70 px-2 py-2 text-center text-lg font-black leading-tight text-white sm:text-xl animate-fadeInOut"
                   style={{ animationDuration: `${duracion}ms` }}
                 >
                   {traducciones[job.name]}
@@ -80,17 +84,42 @@ export default function Jobs() {
               <img
                 src={job.img}
                 alt={job.name}
-                className="w-[140px] h-[120px] object-contain mx-auto"
+                className="h-[140px] w-full object-contain mx-auto"
               />
 
               {/* Nombre */}
-              <p className="mt-2 text-white font-semibold capitalize text-sm sm:text-base">
+              <p className="mt-2 text-white font-bold capitalize text-xl sm:text-base">
                 {job.name}
               </p>
             </div>
           );
         })}
       </div>
+
+      <div className="pointer-events-none absolute inset-x-1 top-1/2 z-10 flex -translate-y-1/2 items-center justify-between" aria-label="Páginas de profesiones">
+        <button
+          type="button"
+          onClick={() => setCurrentPage((page) => Math.max(0, page - 1))}
+          disabled={currentPage === 0}
+          className="pointer-events-auto rounded-full bg-blue-600 px-4 py-3 text-3xl font-black leading-none text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label="Página anterior"
+        >
+          &lt;
+        </button>
+        <button
+          type="button"
+          onClick={() => setCurrentPage((page) => Math.min(pageCount - 1, page + 1))}
+          disabled={currentPage === pageCount - 1}
+          className="pointer-events-auto rounded-full bg-blue-600 px-4 py-3 text-3xl font-black leading-none text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-30"
+          aria-label="Página siguiente"
+        >
+          &gt;
+        </button>
+      </div>
+
+      <span className="mt-auto pt-4 text-sm font-bold text-gray-700 dark:text-gray-200">
+        {currentPage + 1} / {pageCount}
+      </span>
 
       {/* Animaciones CSS */}
       <style>

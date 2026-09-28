@@ -138,7 +138,7 @@ export default function WheelSpinner({
     oscillator.frequency.setValueAtTime(145, now);
     oscillator.frequency.exponentialRampToValueAtTime(85, now + 0.055);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.2, now + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.006);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
     oscillator.connect(gain);
     gain.connect(audioContext.destination);

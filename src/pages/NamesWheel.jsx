@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import WheelSpinner from '../components/WheelSpinner';
+import WheelResultModal from '../components/WheelResultModal';
 import useSpeech from '../hooks/useSpeech';
 import useShake from '../hooks/useShake';
 
@@ -70,13 +71,17 @@ export default function NamesWheel() {
   const [isResultOpen, setIsResultOpen] = useState(false);
   const [spinRequest, setSpinRequest] = useState(0);
   const [selectedItem, setSelectedItem] = useState(null);
+  const spinAgain = () => {
+    if (availableNames.length === 0) return;
+    stopSpeech();
+    setIsResultOpen(false);
+    setSpinRequest((current) => current + 1);
+  };
   const shake = useShake({
     armed: isResultOpen,
     onShake: () => {
-      if (!isResultOpen || availableNames.length === 0) return;
-      stopSpeech();
-      setIsResultOpen(false);
-      setSpinRequest(current => current + 1);
+      if (!isResultOpen) return;
+      spinAgain();
     },
   });
   const nameAreaRef = useRef(null);
@@ -103,7 +108,7 @@ export default function NamesWheel() {
       }
       text.style.fontSize = `${minimum}px`;
       const verticalScale = (area.clientHeight * 0.95) / Math.max(text.scrollHeight, 1);
-      text.style.setProperty('--name-vertical-scale', String(verticalScale));
+      text.style.transform = `scaleY(${verticalScale * 1.15})`;
     };
     fitName();
     const observer = new ResizeObserver(fitName);
@@ -241,18 +246,19 @@ export default function NamesWheel() {
       </section>
 
       {isResultOpen && (
-        <div className="number-wheel-modal-backdrop" role="presentation">
-          <div className="number-wheel-modal" role="dialog" aria-modal="true" aria-labelledby="names-wheel-modal-title">
-            <button type="button" className="number-wheel-modal-close" onClick={closeResult} aria-label="Cerrar resultado">×</button>
-            <p id="names-wheel-modal-title" className="number-wheel-modal-label">The student is</p>
-            {availableNames.length === 0 && (
-              <p role="status" className="absolute bottom-1 left-2 right-2 z-10 text-xs font-bold text-slate-700">Ya salieron todos. Tocá Reiniciar</p>
-            )}
-            <div className="names-wheel-modal-name-area" ref={nameAreaRef}>
-              <span className="names-wheel-modal-name" ref={nameTextRef}>{result}</span>
+        <WheelResultModal
+          title="The student is"
+          onClose={closeResult}
+          onSpin={spinAgain}
+          spinDisabled={availableNames.length === 0}
+          status={availableNames.length === 0 && (
+            <p role="status" className="absolute bottom-1 left-2 right-2 z-10 text-xs font-bold text-slate-700">Ya salieron todos. Tocá Reiniciar</p>
+          )}
+        >
+            <div className="absolute bottom-[4.5rem] left-2 right-2 top-28 flex items-center justify-center" ref={nameAreaRef}>
+              <span className="block w-full overflow-hidden text-center text-base font-black leading-[1.15] [overflow-wrap:normal] [word-break:normal] [transform-origin:center]" ref={nameTextRef}>{result}</span>
             </div>
-          </div>
-        </div>
+        </WheelResultModal>
       )}
     </main>
   );
